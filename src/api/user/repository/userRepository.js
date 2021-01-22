@@ -4,7 +4,7 @@ const sql = require('mssql');
 const SQL_SELECT_QUERY = `SELECT id, name, email, password, cargo, active FROM Users`;
 const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, cargo, active) VALUES (@name, @email, @password, @cargo, @active)`;
 const SQL_DELETE_QUERY = `DELETE FROM Users WHERE id=@id`;
-// const SQL_SELECT_LOGIN = `SELECT id, name, email, password, cargo, active FROM Users WHERE email = @email AND password = @password`;
+const SQL_SELECT_LOGIN = `SELECT id FROM Users WHERE email = @email AND password = @password`;
 
 exports.get_all_users = async () => {
     try{
@@ -12,6 +12,20 @@ exports.get_all_users = async () => {
         const request = dbClient.request();
 
         const result = await request.query(SQL_SELECT_QUERY);
+        return result.recordsets[0];
+
+    } catch(error) {
+        console.log(error);
+        return null;
+    }
+}
+
+exports.get_user_by_email = async (userEmail) => {
+    try{
+        const dbClient = await getConnection();
+        const request = dbClient.request();
+
+        const result = await request.query(`SELECT * FROM Users WHERE email = '${userEmail}'`);
         return result.recordsets[0];
 
     } catch(error) {
@@ -93,18 +107,18 @@ exports.delete_user = async(id) => {
     }              
 }
 
-// exports.login_user = async(email, password) =>{
-//     try{
-//         const dbClient = await getConnection();
-//         const request = dbClient.request();
+exports.login_user = async(email, password) =>{
+    try{
+        const dbClient = await getConnection();
+        const request = dbClient.request();
 
-//         request.input('email', sql.VarChar, email);
-//         request.input('password', sql.VarChar, password);
+        request.input('email', sql.VarChar, email);
+        request.input('password', sql.VarChar, password);
 
-//         const result = await request.query(SQL_SELECT_LOGIN);
-//         return result.recordsets[0];
+        const result = await request.query(SQL_SELECT_LOGIN);
+        return result.recordsets[0];
 
-//     } catch(error) {
-//         return null;
-//     }
-// }
+    } catch(error) {
+        return null;
+    }
+}
