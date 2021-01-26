@@ -20,6 +20,22 @@ exports.get_all_users = async () => {
     }
 }
 
+
+exports.get_user = async (userId) => {
+    try{
+        const dbClient = await getConnection();
+        const request = dbClient.request();
+
+        const result = await request.query(`SELECT * FROM Users WHERE id = '${userId}'`);
+        console.log(result.recordset[0])
+        return result.recordsets[0];
+
+    } catch(error) {
+        console.log(error);
+        return null;
+    }
+}
+
 exports.get_user_by_email = async (userEmail) => {
     try{
         const dbClient = await getConnection();

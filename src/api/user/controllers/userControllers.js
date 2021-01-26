@@ -18,6 +18,19 @@ exports.get_all_users = async (req, res) => {
     }
 }
 
+exports.get_user = async (req, res) => {
+    try{
+        const userSearch = await userRepository.get_user(req.params.id);
+        return responses.response(
+            res, 
+            {status: 200, message:'Sucesso ao trazer Usuário!', 
+            value: userSearch ? userSearch.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.cargo, user.active)) : null});
+    }  
+    catch(err){
+        return responses.response(res, {status: 500, message:'Falha ao trazer Usuário!'})
+    }
+}
+
 exports.create_user = async (req, res) => {
 
     let payloadExpected = {
@@ -48,9 +61,9 @@ exports.create_user = async (req, res) => {
 exports.update_user = async (req, res) => {
     try{
         if (req.body.name || req.body.email || req.body.password || req.body.cargo || req.body.active) {
-            updateFaq = await userRepository.update_user(req.params.id, req.body.name,  req.body.email, req.body.password, req.body.cargo, req.body.active);
+            updateUser = await userRepository.update_user(req.params.id, req.body.name,  req.body.email, req.body.password, req.body.cargo, req.body.active);
 
-            if(updateFaq){
+            if(updateUser){
                 return responses.response(res, {status: 200, message:'Usuário editado com sucesso!'});
             } else {
                 throw null
