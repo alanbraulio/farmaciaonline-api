@@ -27,7 +27,6 @@ exports.get_user = async (userId) => {
         const request = dbClient.request();
 
         const result = await request.query(`SELECT * FROM Users WHERE id = '${userId}'`);
-        console.log(result.recordset[0])
         return result.recordsets[0];
 
     } catch(error) {

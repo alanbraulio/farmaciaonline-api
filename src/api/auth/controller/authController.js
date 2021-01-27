@@ -12,7 +12,7 @@ exports.login = async (req, res, next) => {
     if (payloadResult.success) {
         const user = await authHelpers.getUserByEmail(req.body.email);
         if (!user) authHelpers.sendResponse(res, 401, 'E-mail inválido - Usuário não encontrado'); 
-        else if (user && user.password && user.email === req.body.email && user.password === req.body.password) {
+        else if (user.email === req.body.email && user.password === req.body.password) {
                 authHelpers.completeUserNativeLogIn(user, res)
         }else{
             authHelpers.sendResponse(res, 401, 'Senha inválida.');
