@@ -1,9 +1,43 @@
-const payloadCheck = require('payload-validator');
-
+const { check, param } = require('express-validator');
 const userRepository = require('../repository/userRepository');
 const responses = require('../../common/responses/responses');
+const { BadRequestError } = require('../../shared/errors/requestError');
+const { getErrosFromRequestValidation } = require('../../shared/errors/errorBuilder');
+
 
 const UserModel = require("./userModel");
+
+async function configureCheckForName(req) {
+    await check('name')
+        .isString()
+        .withMessage("Parâmetro name mal formatado")
+        .notEmpty()
+        .withMessage("Parâmetro name não preenchido")
+        .isLength({ max: 100 })
+        .withMessage("Parâmetro name ultrapassou o limite de 100 caracteres")
+        .run(req);
+}
+
+async function configureCheckForEmail(req) {
+    await check('email')
+        .isEmail()
+        .withMessage("Parâmetro email mal formatado")
+        .notEmpty()
+        .withMessage("Parâmetro email não preenchido")
+        .isLength({ max: 100 })
+        .withMessage("Parâmetro email ultrapassou o limite de 100 caracteres")
+        .run(req);
+}
+
+async function configureCheckForPosition(req) {
+    await check('position')
+        .isString()
+        .withMessage("Parâmetro position mal formatado")
+        .notEmpty()
+        .withMessage("Parâmetro position não preenchido")
+        .run(req);
+}
+
 
 exports.get_all_users = async (req, res) => {
     try{
@@ -11,7 +45,7 @@ exports.get_all_users = async (req, res) => {
         return responses.response(
             res, 
             {status: 200, message:'Sucesso ao pegar os Usuários!', 
-            value: users ? users.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.cargo, user.active)) : users});
+            value: users ? users.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.position_id, user.active)) : users});
     }  
     catch(err){
         return responses.response(res, {status: 500, message:'Falha ao pegar os Usuários!'})
@@ -25,7 +59,7 @@ exports.get_user = async (req, res) => {
             return responses.response(
             res, 
             {status: 200, message:'Sucesso ao trazer Usuário!', 
-            value: userSearch ? userSearch.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.cargo, user.active)) : null});
+            value: userSearch ? userSearch.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.position_id, user.active)) : null});
         }else{
             return responses.response(res, {status: 500, message:'Falha ao trazer Usuário!'})
         }
@@ -35,59 +69,99 @@ exports.get_user = async (req, res) => {
     }
 }
 
-exports.create_user = async (req, res) => {
-
-    let payloadExpected = {
-        "name": "",
-        "email": "",
-        "password": "",
-        "cargo":"",
-    };
-
-    let checkedPayload = payloadCheck.validator(req.body,payloadExpected, ['name', 'email', "password", "cargo"], false);
-    if(!checkedPayload.success){
-        return responses.response(res, {status: 400, message:'Por favor, preencha todos os campos!'})
-    }
-
+exports.create_user = async (req, res, next) => {
+    
     try{
-        const newUser = await userRepository.create_user(req.body.name, req.body.email, req.body.password, req.body.cargo);
+
+        await configureCheckForName(req);
+        await configureCheckForEmail(req);
+        await configureCheckForPosition(req);
+
+        const validationError = await getErrosFromRequestValidation(req);
+        
+        if (validationError) {
+            return next(validationError);
+        }
+
+        const user = await userRepository.get_user_by_email(req.body.email);
+
+        if(user) return next(new BadRequestError('Já existe um usuário com este email!'));
+
+        const newUser = await userRepository.create_user(req.body.name, req.body.email, req.body.password, req.body.position);
         if(newUser){
             return responses.response(res, {status: 201, message:"Sucesso ao criar Usuário!"})
-        } else{
-            throw null;
-        }
+        } 
+        return next(new Error('Falha ao criar o Usuário!'));
     }catch(err){
-        return responses.response(res, {status: 500, message:"Falha ao criar o Usuário!"})
+        console.log(err)
+        return next(new Error('Falha ao criar o Usuário!'));
     }
 }
 
-exports.update_user = async (req, res) => {
+exports.update_user = async (req, res, next) => {
     try{
-        if (req.body.name || req.body.email || req.body.password || req.body.cargo || req.body.active) {
-            updateUser = await userRepository.update_user(req.params.id, req.body.name,  req.body.email, req.body.password, req.body.cargo, req.body.active);
-
-            if(updateUser){
-                return responses.response(res, {status: 200, message:'Usuário editado com sucesso!'});
-            } else {
-                throw null
-            }
-        } else {
-            return responses.response(res, {status: 400, message:'Por favor, preencha ao menos um campo para ser alterado'})
+        if (!req.body.name && !req.body.email && !req.body.password) {
+            return next(
+              new BadRequestError(
+                'Preencher o parâmetro name ou email ou password para executar a operação.'
+              )
+            );
+          }
+      
+        if (req.body.name) {
+        await configureCheckForName(req);
         }
+    
+        if (req.body.email) {
+        await configureCheckForEmail(req);
+        }
+    
+        if (req.body.position) {
+        await configureCheckForPosition(req);
+        }
+
+        
+        const validationError = await getErrosFromRequestValidation(req);
+        if (validationError) {
+        return next(validationError);
+        }
+
+        const user = await teamRepository.get_user(req.params.id);
+
+        if (user.isLength === 0)
+        return responses.response(res, {
+            status: 401,
+            message: 'Usuário não encontrado',
+        });
+
+        const updateUser = await teamRepository.updateUser(
+            req.params.id,
+            req.body.name,
+            req.body.email,
+            req.body.password,
+          );
+          if (updateUser) {
+            return responses.response(res, {
+              status: 200,
+              message: 'Usuário editado com sucesso!',
+            });
+          }
+      
+          return next(new Error('Falha ao editar o Usuário'));
+
     }catch(err){
-        return responses.response(res, {status: 500, message:'Falha ao editar o Usuário!'})
+        return next(new Error('Falha ao editar o Usuário'));
     }
 }
 
-exports.delete_user = async (req, res) => {
+exports.delete_user = async (req, res, next) => {
     try{
-        const deleteUser = await userRepository.delete_user(req.params.id)
+        const deleteUser = await userRepository.delete_user(req.params.id);
         if(deleteUser){
             return responses.response(res, {status: 200, message:"Usuário deletado com sucesso!"})
-        } else{
-            throw null
-        }
+        } 
+        return next(new Error('Falha ao deletar o Usuário'));
     }catch(err){
-        return responses.response(res, {status: 500, message:"Falha ao deletar o Usuário!"})
+        return next(new Error('Falha ao deletar o Usuário'));
     }
 }
