@@ -45,7 +45,7 @@ exports.get_all_users = async (req, res) => {
         return responses.response(
             res, 
             {status: 200, message:'Sucesso ao pegar os Usuários!', 
-            value: users ? users.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.position_id, user.active)) : users});
+            value: users ? users.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.position, user.active)) : users});
     }  
     catch(err){
         return responses.response(res, {status: 500, message:'Falha ao pegar os Usuários!'})
@@ -59,7 +59,7 @@ exports.get_user = async (req, res) => {
             return responses.response(
             res, 
             {status: 200, message:'Sucesso ao trazer Usuário!', 
-            value: userSearch ? userSearch.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.position_id, user.active)) : null});
+            value: userSearch ? userSearch.map((user) => new UserModel(user.id,user.name,user.email,user.password, user.position, user.active)) : null});
         }else{
             return responses.response(res, {status: 500, message:'Falha ao trazer Usuário!'})
         }

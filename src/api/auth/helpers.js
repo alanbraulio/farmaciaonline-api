@@ -13,7 +13,7 @@ exports.completeUserNativeLogIn = (user, res) => {
 
 exports.getUserByEmail = async (userEmail) => {
     const user = await userRepository.get_user_by_email(userEmail);
-    return user[0];
+    return user;
 }
 
 // exports.validateTokenScope = (req) => {

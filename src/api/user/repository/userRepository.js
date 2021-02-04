@@ -2,10 +2,13 @@ const { getConnection } = require('../../shared/dbConnection');
 const globalReturn = require('../../shared/returnPrepare');
 const sql = require('mssql');
 
-const SQL_SELECT_QUERY = `SELECT id, name, email, password, position_id, active FROM Users`;
+const SQL_SELECT_QUERY = `SELECT Users.id, Users.name, Users.email, UsersType.name as position
+FROM Users 
+INNER JOIN UsersType ON Users.position_id = UsersType.id`;
 const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, position_id, active) VALUES (@name, @email, @password, (SELECT id FROM UsersType WHERE name=@position), @active)`;
 const SQL_DELETE_QUERY = `DELETE FROM Users WHERE id=@id`;
 const SQL_SELECT_LOGIN = `SELECT id FROM Users WHERE email = @email AND password = @password`;
+const SQL_SELECT_USER = `${SQL_SELECT_QUERY} and Users.id=@id`;
 
 exports.get_all_users = async () => {
     try{
@@ -22,12 +25,14 @@ exports.get_all_users = async () => {
 }
 
 
-exports.get_user = async (userId) => {
+exports.get_user = async (id) => {
     try{
         const dbClient = await getConnection();
         const request = dbClient.request();
 
-        const result = await request.query(`SELECT * FROM Users WHERE id = '${userId}'`);
+        request.input('id', sql.UniqueIdentifier, id);
+
+        const result = await request.query(SQL_SELECT_USER);
         return result.recordsets[0];
 
     } catch(error) {
