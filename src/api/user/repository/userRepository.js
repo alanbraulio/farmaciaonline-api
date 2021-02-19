@@ -5,7 +5,7 @@ const sql = require('mssql');
 const SQL_SELECT_QUERY = `SELECT Users.id, Users.name, Users.email, UsersType.name as position
 FROM Users 
 INNER JOIN UsersType ON Users.position_id = UsersType.id`;
-const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, position_id, active) VALUES (@name, @email, @password, (SELECT id FROM UsersType WHERE name=@position), @active)`;
+const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, position_id, crm, crf, cep, endereco, dataNascimento, telefone, active) VALUES (@name, @email, @password, (SELECT id FROM UsersType WHERE name=@position), @crm, @crf, @cep, @endereco, @dataNascimento, @telefone, @active)`;
 const SQL_DELETE_QUERY = `DELETE FROM Users WHERE id=@id`;
 const SQL_SELECT_LOGIN = `SELECT id FROM Users WHERE email = @email AND password = @password`;
 const SQL_SELECT_USER = `${SQL_SELECT_QUERY} and Users.id=@id`;
@@ -55,7 +55,7 @@ exports.get_user_by_email = async (userEmail) => {
     }
 }
 
-exports.create_user = async (name, email, password, position) => {
+exports.create_user = async (name, email, password, position, crm, crf, cep, endereco, dataNascimento, telefone, active = 0) => {
     try{
         const dbClient = await getConnection();
         const request = dbClient.request();
@@ -64,7 +64,13 @@ exports.create_user = async (name, email, password, position) => {
         request.input('email', sql.VarChar, email);
         request.input('password', sql.VarChar, password);
         request.input('position', sql.VarChar, position);
-        request.input('active', sql.VarChar, 1);
+        request.input('crm', sql.VarChar, crm);
+        request.input('crf', sql.VarChar, crf);
+        request.input('cep', sql.VarChar, cep);
+        request.input('endereco', sql.VarChar, endereco);
+        request.input('dataNascimento', sql.Date, new Date());
+        request.input('telefone', sql.VarChar, telefone);
+        request.input('active', sql.VarChar, active);
 
         const result = await request.query(SQL_INSERT_QUERY);
         return globalReturn.returnPrepare(result.rowsAffected);

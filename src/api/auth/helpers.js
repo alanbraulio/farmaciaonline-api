@@ -7,7 +7,7 @@ exports.completeUserNativeLogIn = (user, res) => {
         email: user.email,
         id: user.id
     }, process.env.JWT_KEY,  {
-        expiresIn: 1800 });
+        expiresIn: 3600 });
     this.sendResponse(res, 200, 'Login efetuado com sucesso.', '', token, user);
 }
 
