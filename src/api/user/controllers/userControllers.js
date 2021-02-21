@@ -41,7 +41,7 @@ async function configureCheckForPosition(req) {
 
 exports.get_all_users = async (req, res) => {
   try {
-    const users = await userRepository.get_all_users();
+    const users = await userRepository.getAllUsers();
     return responses.response(res, {
       status: 200,
       message: "Sucesso ao pegar os Usuários!",
@@ -53,6 +53,14 @@ exports.get_all_users = async (req, res) => {
                 user.name,
                 user.email,
                 user.password,
+                user.crm,
+                user.crf,
+                user.cep,
+                user.cpf,
+                user.endereco,
+                user.dataNascimento,
+                user.telefone,
+                user.celular,
                 user.position,
                 user.active
               )
@@ -69,7 +77,7 @@ exports.get_all_users = async (req, res) => {
 
 exports.get_user = async (req, res) => {
   try {
-    const userSearch = await userRepository.get_user(req.params.id);
+    const userSearch = await userRepository.getUser(req.params.id);
     if (userSearch) {
       return responses.response(res, {
         status: 200,
@@ -82,6 +90,14 @@ exports.get_user = async (req, res) => {
                   user.name,
                   user.email,
                   user.password,
+                  user.crm,
+                  user.crf,
+                  user.cep,
+                  user.cpf,
+                  user.endereco,
+                  user.dataNascimento,
+                  user.telefone,
+                  user.celular,
                   user.position,
                   user.active
                 )
@@ -114,12 +130,12 @@ exports.create_user = async (req, res, next) => {
       return next(validationError);
     }
 
-    const user = await userRepository.get_user_by_email(req.body.email);
+    const user = await userRepository.getUserByEmail(req.body.email);
 
     if (user)
       return next(new BadRequestError("Já existe um usuário com este email!"));
 
-    const newUser = await userRepository.create_user(
+    const newUser = await userRepository.createUser(
       req.body.name,
       req.body.email,
       req.body.password,
@@ -128,8 +144,10 @@ exports.create_user = async (req, res, next) => {
       req.body.crf,
       req.body.cep,
       req.body.endereco,
+      req.body.cpf,
       req.body.dataNascimento,
       req.body.telefone,
+      req.body.celular,
       req.body.active,
     );
     if (newUser) {
@@ -146,10 +164,17 @@ exports.create_user = async (req, res, next) => {
 
 exports.update_user = async (req, res, next) => {
   try {
-    if (!req.body.name && !req.body.email && !req.body.password) {
+    if(req.body.crf || req.body.crm || req.body.cpf || req.body.position){
       return next(
         new BadRequestError(
-          "Preencher o parâmetro name ou email ou password para executar a operação."
+          "Esse atributo não pode ser alterado"
+        )
+      );
+    }
+    if (!req.body.name && !req.body.email && !req.body.password && !req.body.cep && !req.body.endereco && !req.body.dataNascimento && !req.body.telefone && !req.body.celular) {
+      return next(
+        new BadRequestError(
+          "Preencher o parâmetro name ou email ou password ou cep ou endereco ou dataNascimento ou telefone ou celular para executar a operação."
         )
       );
     }
@@ -162,28 +187,29 @@ exports.update_user = async (req, res, next) => {
       await configureCheckForEmail(req);
     }
 
-    if (req.body.position) {
-      await configureCheckForPosition(req);
-    }
-
     const validationError = await getErrosFromRequestValidation(req);
     if (validationError) {
       return next(validationError);
     }
 
-    const user = await teamRepository.get_user(req.params.id);
+    const user = await userRepository.getUser(req.params.id);
 
-    if (user.isLength === 0)
+    if (user.length === 0)
       return responses.response(res, {
         status: 401,
         message: "Usuário não encontrado",
       });
 
-    const updateUser = await teamRepository.updateUser(
+    const updateUser = await userRepository.updateUser(
       req.params.id,
       req.body.name,
       req.body.email,
-      req.body.password
+      req.body.password,
+      req.body.cep,
+      req.body.endereco,
+      req.body.dataNascimento,
+      req.body.telefone,
+      req.body.celular,
     );
     if (updateUser) {
       return responses.response(res, {
@@ -194,13 +220,14 @@ exports.update_user = async (req, res, next) => {
 
     return next(new Error("Falha ao editar o Usuário"));
   } catch (err) {
+    console.log(err)
     return next(new Error("Falha ao editar o Usuário"));
   }
 };
 
 exports.delete_user = async (req, res, next) => {
   try {
-    const deleteUser = await userRepository.delete_user(req.params.id);
+    const deleteUser = await userRepository.deleteUser(req.params.id);
     if (deleteUser) {
       return responses.response(res, {
         status: 200,

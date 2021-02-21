@@ -10,8 +10,8 @@ router.get('/', userController.get_all_users);
 
 router.post('/', userController.create_user);
 
-router.put('/update/:id', userController.update_user);
+router.patch('/:id', userController.update_user);
 
-router.delete('/delete/:id', userController.delete_user);
+router.delete('/:id', userController.delete_user);
 
 module.exports = router;

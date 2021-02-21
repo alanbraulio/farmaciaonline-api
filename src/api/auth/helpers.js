@@ -6,13 +6,12 @@ exports.completeUserNativeLogIn = (user, res) => {
     const token = jwt.sign({
         email: user.email,
         id: user.id
-    }, process.env.JWT_KEY,  {
-        expiresIn: 3600 });
+    }, process.env.JWT_KEY);
     this.sendResponse(res, 200, 'Login efetuado com sucesso.', '', token, user);
 }
 
 exports.getUserByEmail = async (userEmail) => {
-    const user = await userRepository.get_user_by_email(userEmail);
+    const user = await userRepository.getUserByEmail(userEmail);
     return user;
 }
 
