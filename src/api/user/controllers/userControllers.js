@@ -54,6 +54,7 @@ exports.get_all_users = async (req, res) => {
                 user.email,
                 user.password,
                 user.crm,
+                user.especialidade,
                 user.crf,
                 user.cep,
                 user.cpf,
@@ -91,6 +92,7 @@ exports.get_user = async (req, res) => {
                   user.email,
                   user.password,
                   user.crm,
+                  user.especialidade,
                   user.crf,
                   user.cep,
                   user.cpf,
@@ -130,10 +132,15 @@ exports.create_user = async (req, res, next) => {
       return next(validationError);
     }
 
-    const user = await userRepository.getUserByEmail(req.body.email);
+    const userEmail = await userRepository.getUserByEmail(req.body.email);
 
-    if (user)
+    if (userEmail)
       return next(new BadRequestError("Já existe um usuário com este email!"));
+
+    const userCRM = await userRepository.getUserByCRM(req.body.crm);
+
+    if (userCRM)
+      return next(new BadRequestError("Já existe um usuário com este CRM Cadastrado!"));
 
     const newUser = await userRepository.createUser(
       req.body.name,
@@ -141,6 +148,7 @@ exports.create_user = async (req, res, next) => {
       req.body.password,
       req.body.position,
       req.body.crm,
+      req.body.especialidade,
       req.body.crf,
       req.body.cep,
       req.body.endereco,
@@ -171,10 +179,10 @@ exports.update_user = async (req, res, next) => {
         )
       );
     }
-    if (!req.body.name && !req.body.email && !req.body.password && !req.body.cep && !req.body.endereco && !req.body.dataNascimento && !req.body.telefone && !req.body.celular) {
+    if (!req.body.name && !req.body.email && !req.body.password && !req.body.especialidade && !req.body.cep && !req.body.endereco && !req.body.dataNascimento && !req.body.telefone && !req.body.celular) {
       return next(
         new BadRequestError(
-          "Preencher o parâmetro name ou email ou password ou cep ou endereco ou dataNascimento ou telefone ou celular para executar a operação."
+          "Preencher o parâmetro name ou email ou password ou especialidade ou cep ou endereco ou dataNascimento ou telefone ou celular para executar a operação."
         )
       );
     }
@@ -205,6 +213,7 @@ exports.update_user = async (req, res, next) => {
       req.body.name,
       req.body.email,
       req.body.password,
+      req.body.especialidade,
       req.body.cep,
       req.body.endereco,
       req.body.dataNascimento,

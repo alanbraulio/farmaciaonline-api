@@ -2,10 +2,10 @@ const { getConnection } = require("../../shared/dbConnection");
 const globalReturn = require("../../shared/returnPrepare");
 const sql = require("mssql");
 
-const SQL_SELECT_QUERY = `SELECT Users.id, Users.name, Users.email, Users.crm, Users.crf, Users.cpf, Users.cep, Users.endereco, Users.telefone, Users.celular, UsersType.name as position, Users.active
+const SQL_SELECT_QUERY = `SELECT Users.id, Users.name, Users.email, Users.crm, Users.especialidade, Users.crf, Users.cpf, Users.cep, Users.endereco, Users.telefone, Users.celular, UsersType.name as position, Users.active
 FROM Users 
 INNER JOIN UsersType ON Users.position_id = UsersType.id`;
-const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, position_id, crm, crf, cep, endereco, cpf, dataNascimento, telefone, celular, active) VALUES (@name, @email, @password, (SELECT id FROM UsersType WHERE name=@position), @crm, @crf, @cep, @endereco, @cpf, @dataNascimento, @telefone, @celular, @active)`;
+const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, position_id, crm, especialidade, crf, cep, endereco, cpf, dataNascimento, telefone, celular, active) VALUES (@name, @email, @password, (SELECT id FROM UsersType WHERE name=@position), @crm, @especialidade, @crf, @cep, @endereco, @cpf, @dataNascimento, @telefone, @celular, @active)`;
 const SQL_DELETE_QUERY = `DELETE FROM Users WHERE id=@id`;
 const SQL_SELECT_LOGIN = `SELECT id FROM Users WHERE email = @email AND password = @password`;
 const SQL_SELECT_USER = `${SQL_SELECT_QUERY} and Users.id=@id`;
@@ -53,12 +53,28 @@ exports.getUserByEmail = async (userEmail) => {
   }
 };
 
+exports.getUserByCRM = async (crm) => {
+  try {
+    const dbClient = await getConnection();
+    const request = dbClient.request();
+
+    const result = await request.query(
+      `SELECT * FROM Users WHERE crm = '${crm}'`
+    );
+    return result.recordset[0];
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
 exports.createUser = async (
   name,
   email,
   password,
   position,
   crm,
+  especialidade,
   crf,
   cep,
   endereco,
@@ -77,11 +93,12 @@ exports.createUser = async (
     request.input("password", sql.VarChar, password);
     request.input("position", sql.VarChar, position);
     request.input("crm", sql.VarChar, crm);
+    request.input("especialidade", sql.VarChar, especialidade);
     request.input("crf", sql.VarChar, crf);
     request.input("cep", sql.VarChar, cep);
     request.input("endereco", sql.VarChar, endereco);
     request.input("cpf", sql.VarChar, cpf);
-    request.input("dataNascimento", sql.Date, new Date());
+    request.input("dataNascimento", sql.Date, dataNascimento);
     request.input("telefone", sql.VarChar, telefone);
     request.input("celular", sql.VarChar, celular);
     request.input("active", sql.VarChar, active);
@@ -99,6 +116,7 @@ exports.updateUser = async (
   name,
   email,
   password,
+  especialidade,
   cep,
   endereco,
   dataNascimento,
@@ -123,6 +141,10 @@ exports.updateUser = async (
     if (password) {
       setStatementCollumns.push("password=@password");
       request.input("password", sql.VarChar, password);
+    }
+    if (especialidade) {
+      setStatementCollumns.push("especialidade=@especialidade");
+      request.input("especialidade", sql.VarChar, especialidade);
     }
     if (cep) {
         setStatementCollumns.push("cep=@cep");
