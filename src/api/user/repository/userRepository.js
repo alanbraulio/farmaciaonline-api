@@ -2,7 +2,7 @@ const { getConnection } = require("../../shared/dbConnection");
 const globalReturn = require("../../shared/returnPrepare");
 const sql = require("mssql");
 
-const SQL_SELECT_QUERY = `SELECT Users.id, Users.name, Users.email, Users.crm, Users.especialidade, Users.crf, Users.cpf, Users.cep, Users.endereco, Users.telefone, Users.celular, UsersType.name as position, Users.active
+const SQL_SELECT_QUERY = `SELECT Users.id, Users.name, Users.email, Users.crm, Users.especialidade, Users.crf, Users.cpf, Users.cep, Users.endereco, Users.dataNascimento, Users.telefone, Users.celular, UsersType.name as position, Users.active
 FROM Users 
 INNER JOIN UsersType ON Users.position_id = UsersType.id`;
 const SQL_INSERT_QUERY = `INSERT INTO Users (name, email, password, position_id, crm, especialidade, crf, cep, endereco, cpf, dataNascimento, telefone, celular, active) VALUES (@name, @email, @password, (SELECT id FROM UsersType WHERE name=@position), @crm, @especialidade, @crf, @cep, @endereco, @cpf, @dataNascimento, @telefone, @celular, @active)`;
